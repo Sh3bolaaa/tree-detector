@@ -3,14 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>كاشف الشجرة</title>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background-color: #f0f0f0;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
     h1 { color: #2c662d; }
     #loading { color: #cc0000; }
     img { max-width: 300px; margin-top: 15px; display: none; }
@@ -24,44 +18,49 @@
   <img id="preview">
   <p id="result">...في انتظار الصورة</p>
 
-  <script type="text/javascript">
-    const URL = "./";
-    let model, maxPredictions;
+  <!-- ✅ تحميل المكتبة قبل الكود -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
-    async function init() {
-      try {
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
-        document.getElementById("loading").innerText = "✅ النموذج جاهز!";
-        document.getElementById("upload").disabled = false;
-      } catch (error) {
-        document.getElementById("loading").innerText = "❌ فشل تحميل النموذج";
-        console.error("Model loading failed:", error);
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      const URL = "./";
+      let model, maxPredictions;
+
+      async function init() {
+        try {
+          const modelURL = URL + "model.json";
+          const metadataURL = URL + "metadata.json";
+          model = await tmImage.load(modelURL, metadataURL);
+          maxPredictions = model.getTotalClasses();
+          document.getElementById("loading").innerText = "✅ النموذج جاهز!";
+          document.getElementById("upload").disabled = false;
+        } catch (error) {
+          document.getElementById("loading").innerText = "❌ فشل تحميل النموذج";
+          console.error("Model loading failed:", error);
+        }
       }
-    }
 
-    document.getElementById("upload").addEventListener("change", async function (event) {
-      const file = event.target.files[0];
-      if (!file) return;
+      document.getElementById("upload").addEventListener("change", async function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = document.getElementById("preview");
-        img.src = e.target.result;
-        img.style.display = "block";
-        img.onload = async function () {
-          const prediction = await model.predict(img);
-          const top = prediction.reduce((max, p) => p.probability > max.probability ? p : max);
-          document.getElementById("result").innerText =
-            `✅ النتيجة: ${top.className} بنسبة ${(top.probability * 100).toFixed(2)}%`;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById("preview");
+          img.src = e.target.result;
+          img.style.display = "block";
+          img.onload = async function () {
+            const prediction = await model.predict(img);
+            const top = prediction.reduce((max, p) => p.probability > max.probability ? p : max);
+            document.getElementById("result").innerText =
+              `✅ النتيجة: ${top.className} بنسبة ${(top.probability * 100).toFixed(2)}%`;
+          };
         };
-      };
-      reader.readAsDataURL(file);
-    });
+        reader.readAsDataURL(file);
+      });
 
-    init();
+      await init();
+    });
   </script>
 </body>
 </html>
