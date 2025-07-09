@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>كاشف الشجرة</title>
-
-  <!-- ✅ السطر المهم لتحميل مكتبة Teachable Machine -->
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -16,17 +13,19 @@
     }
     h1 { color: #2c662d; }
     #loading { color: #cc0000; }
+    img { max-width: 300px; margin-top: 15px; display: none; }
   </style>
 </head>
 <body>
-  <h1>📷 كاشف الشجرة</h1>
-  <p id="loading">🔄 جاري تحميل النموذج...</p>
+  <h1>🌳 كاشف الشجرة</h1>
+  <p id="loading">⏳ جاري تحميل النموذج...</p>
   <input type="file" id="upload" accept="image/*" disabled>
+  <br>
+  <img id="preview">
   <p id="result">...في انتظار الصورة</p>
 
   <script type="text/javascript">
     const URL = "./";
-
     let model, maxPredictions;
 
     async function init() {
@@ -47,14 +46,19 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      const image = new Image();
-      image.src = URL.createObjectURL(file);
-      image.onload = async () => {
-        const prediction = await model.predict(image);
-        const top = prediction.reduce((max, p) => p.probability > max.probability ? p : max);
-        document.getElementById("result").innerText =
-          `✅ النتيجة: ${top.className} (${(top.probability * 100).toFixed(2)}%)`;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById("preview");
+        img.src = e.target.result;
+        img.style.display = "block";
+        img.onload = async function () {
+          const prediction = await model.predict(img);
+          const top = prediction.reduce((max, p) => p.probability > max.probability ? p : max);
+          document.getElementById("result").innerText =
+            `✅ النتيجة: ${top.className} بنسبة ${(top.probability * 100).toFixed(2)}%`;
+        };
       };
+      reader.readAsDataURL(file);
     });
 
     init();
