@@ -1,86 +1,53 @@
 <!DOCTYPE html>
 <html lang="ar">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>كاشف الشجرة 🌳</title>
+<head>
+    <meta charset="UTF-8">
+    <title>كاشف الشجرة</title>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 30px;
-        background-color: #f2f2f2;
-      }
-      h1 {
-        font-size: 2rem;
-        margin-bottom: 20px;
-      }
-      #upload {
-        margin: 15px 0;
-      }
-      #result {
-        font-size: 1.5rem;
-        color: #222;
-        margin-top: 20px;
-        padding: 10px;
-      }
-      #loading {
-        font-size: 1rem;
-        color: #555;
-      }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
+        h1 { color: #2c662d; }
+        #loading { color: #cc0000; }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <h1>📷 كاشف الشجرة</h1>
-    <p id="loading">جارٍ تحميل النموذج... ⏳</p>
-    <input type="file" id="upload" accept="image/*" disabled />
-    <div id="result">في انتظار الصورة...</div>
-
+    <p id="loading">🔄 جاري تحميل النموذج...</p>
+    <input type="file" id="upload" accept="image/*" disabled>
+    <p id="result">...في انتظار الصورة</p>
     <script type="text/javascript">
-      const URL = "model/";
+        const URL = "model/"; // Local model path
 
-      let model, maxPredictions;
+        let model, maxPredictions;
 
-      async function init() {
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
-        try {
-          model = await tmImage.load(modelURL, metadataURL);
-          maxPredictions = model.getTotalClasses();
-          document.getElementById("loading").innerText = "✅ النموذج جاهز!";
-          document.getElementById("upload").disabled = false;
-        } catch (error) {
-          document.getElementById("loading").innerText = "❌ فشل تحميل النموذج";
-          console.error("Model load error:", error);
+        async function init() {
+            try {
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+                document.getElementById("loading").innerText = "✅ النموذج جاهز!";
+                document.getElementById("upload").disabled = false;
+            } catch (error) {
+                document.getElementById("loading").innerText = "❌ فشل تحميل النموذج";
+                console.error("Model loading failed:", error);
+            }
         }
-      }
 
-      async function predict(img) {
-        const prediction = await model.predict(img);
-        prediction.sort((a, b) => b.probability - a.probability);
-        const label = prediction[0].className;
-        const confidence = prediction[0].probability;
-        const resultDiv = document.getElementById("result");
+        document.getElementById("upload").addEventListener("change", async function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        if (label.toLowerCase() === "tree" && confidence > 0.8) {
-          resultDiv.innerText = `✅ دي شجرة (نسبة الثقة: ${(confidence * 100).toFixed(2)}%)`;
-          resultDiv.style.color = "green";
-        } else {
-          resultDiv.innerText = `❌ مش شجرة (نسبة الثقة: ${(confidence * 100).toFixed(2)}%)`;
-          resultDiv.style.color = "red";
-        }
-      }
+            const image = new Image();
+            image.src = URL.createObjectURL(file);
+            image.onload = async () => {
+                const prediction = await model.predict(image);
+                const top = prediction.reduce((max, p) => p.probability > max.probability ? p : max);
+                document.getElementById("result").innerText = `✅ النتيجة: ${top.className} (${(top.probability * 100).toFixed(2)}%)`;
+            };
+        });
 
-      document.getElementById("upload").addEventListener("change", async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-        const img = new Image();
-        img.onload = () => predict(img);
-        img.src = URL.createObjectURL(file);
-      });
-
-      init();
+        init();
     </script>
-  </body>
+</body>
 </html>
