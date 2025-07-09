@@ -1,26 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
   <head>
-    <title>Tree Detector</title>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>كاشف الشجرة 🌳</title>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
     <style>
       body {
-        font-family: sans-serif;
+        font-family: Arial, sans-serif;
         text-align: center;
         padding: 30px;
+        background-color: #f2f2f2;
+      }
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+      }
+      #upload {
+        margin: 15px 0;
       }
       #result {
-        font-size: 24px;
+        font-size: 1.5rem;
+        color: #222;
         margin-top: 20px;
+        padding: 10px;
       }
-      #upload:disabled {
-        opacity: 0.5;
+      #loading {
+        font-size: 1rem;
+        color: #555;
       }
     </style>
   </head>
   <body>
-    <h1>هل دي شجرة؟ 🌳</h1>
+    <h1>📷 كاشف الشجرة</h1>
     <p id="loading">جارٍ تحميل النموذج... ⏳</p>
     <input type="file" id="upload" accept="image/*" disabled />
     <div id="result">في انتظار الصورة...</div>
@@ -33,34 +45,36 @@
       async function init() {
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
-
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
-
-        document.getElementById("loading").innerText = "✅ النموذج جاهز! اختار صورة تحت";
-        document.getElementById("upload").disabled = false;
+        try {
+          model = await tmImage.load(modelURL, metadataURL);
+          maxPredictions = model.getTotalClasses();
+          document.getElementById("loading").innerText = "✅ النموذج جاهز!";
+          document.getElementById("upload").disabled = false;
+        } catch (error) {
+          document.getElementById("loading").innerText = "❌ فشل تحميل النموذج";
+          console.error("Model load error:", error);
+        }
       }
 
       async function predict(img) {
         const prediction = await model.predict(img);
         prediction.sort((a, b) => b.probability - a.probability);
-
         const label = prediction[0].className;
         const confidence = prediction[0].probability;
-
         const resultDiv = document.getElementById("result");
 
-        if (label === "Tree" && confidence > 0.8) {
-          resultDiv.innerText = "✅ دي شجرة";
+        if (label.toLowerCase() === "tree" && confidence > 0.8) {
+          resultDiv.innerText = `✅ دي شجرة (نسبة الثقة: ${(confidence * 100).toFixed(2)}%)`;
+          resultDiv.style.color = "green";
         } else {
-          resultDiv.innerText = "❌ لا دي مش شجرة";
+          resultDiv.innerText = `❌ مش شجرة (نسبة الثقة: ${(confidence * 100).toFixed(2)}%)`;
+          resultDiv.style.color = "red";
         }
       }
 
       document.getElementById("upload").addEventListener("change", async (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
         const img = new Image();
         img.onload = () => predict(img);
         img.src = URL.createObjectURL(file);
